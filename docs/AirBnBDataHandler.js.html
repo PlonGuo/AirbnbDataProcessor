@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: AirBnBDataHandler.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: AirBnBDataHandler.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>// AirBnBDataHandler.js
+import fs from 'fs/promises';
+import csv from 'csv-parser';
+
+/**
+ * Loads CSV data from the specified file path.
+ * @param {string} filePath - The path to the CSV file.
+ * @returns {Promise&lt;Array&lt;Object>>} - A promise that resolves to an array of listing objects.
+ */
+const loadData = async (filePath) => {
+  const data = [];
+  const fileStream = await fs.open(filePath, 'r');
+  return new Promise((resolve, reject) => {
+    fileStream.createReadStream()
+      .pipe(csv())
+      .on('data', (row) => data.push(row))
+      .on('end', () => resolve(data))
+      .on('error', (error) => reject(error));
+  });
+};
+
+/**
+ * Filters the listings based on the provided criteria.
+ * @param {Array&lt;Object>} listings - The array of listing objects.
+ * @param {Object} criteria - The filter criteria.
+ * @param {number} [criteria.minPrice] - The minimum price.
+ * @param {number} [criteria.maxPrice] - The maximum price.
+ * @param {number} [criteria.minRooms] - The minimum number of rooms.
+ * @param {number} [criteria.maxRooms] - The maximum number of rooms.
+ * @param {number} [criteria.minReviewScore] - The minimum review score.
+ * @param {number} [criteria.maxReviewScore] - The maximum review score.
+ * @returns {Array&lt;Object>} - The filtered array of listing objects.
+ */
+const filterListings = (listings, criteria) => {
+  return listings.filter((listing) => {
+    const price = parseFloat(listing.price.replace(/[^0-9.-]+/g, ''));
+    const rooms = parseInt(listing.bedrooms, 10);
+    const reviewScore = parseFloat(listing.review_scores_rating);
+
+    return (!criteria.minPrice || price >= criteria.minPrice) &amp;&amp;
+           (!criteria.maxPrice || price &lt;= criteria.maxPrice) &amp;&amp;
+           (!criteria.minRooms || rooms >= criteria.minRooms) &amp;&amp;
+           (!criteria.maxRooms || rooms &lt;= criteria.maxRooms) &amp;&amp;
+           (!criteria.minReviewScore || reviewScore >= criteria.minReviewScore) &amp;&amp;
+           (!criteria.maxReviewScore || reviewScore &lt;= criteria.maxReviewScore);
+  });
+};
+
+/**
+ * Computes statistics on the filtered listings.
+ * @param {Array&lt;Object>} listings - The array of filtered listing objects.
+ * @returns {Object} - An object containing the count of listings and average price per number of rooms.
+ */
+const computeStatistics = (listings) => {
+  const totalListings = listings.length;
+  const pricePerRoom = listings.reduce((acc, listing) => {
+    const price = parseFloat(listing.price.replace(/[^0-9.-]+/g, ''));
+    const rooms = parseInt(listing.bedrooms, 10) || 1; // Default to 1 if bedrooms is not a number
+    return acc + price / rooms;
+  }, 0) / totalListings;
+
+  return {
+    totalListings,
+    averagePricePerRoom: pricePerRoom.toFixed(2),
+  };
+};
+
+/**
+ * Computes the number of listings per host and provides a ranking.
+ * @param {Array&lt;Object>} listings - The array of listing objects.
+ * @returns {Array&lt;Object>} - An array of hosts sorted by the number of listings in descending order.
+ */
+const computeHostRanking = (listings) => {
+  const hostMap = listings.reduce((acc, listing) => {
+    const hostId = listing.host_id;
+    if (!acc[hostId]) {
+      acc[hostId] = {
+        hostId,
+        hostName: listing.host_name,
+        listingsCount: 0,
+      };
+    }
+    acc[hostId].listingsCount += 1;
+    return acc;
+  }, {});
+
+  return Object.values(hostMap).sort((a, b) => b.listingsCount - a.listingsCount);
+};
+
+/**
+ * Exports the results to a specified file.
+ * @param {string} filePath - The path to the output file.
+ * @param {Object} data - The data to be written to the file.
+ * @returns {Promise&lt;void>} - A promise that resolves when the file has been written.
+ */
+const exportResults = async (filePath, data) => {
+  const jsonData = JSON.stringify(data, null, 2);
+  await fs.writeFile(filePath, jsonData, 'utf8');
+};
+
+export {
+  loadData,
+  filterListings,
+  computeStatistics,
+  computeHostRanking,
+  exportResults,
+};</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#computeHostRanking">computeHostRanking</a></li><li><a href="global.html#computeStatistics">computeStatistics</a></li><li><a href="global.html#exportResults">exportResults</a></li><li><a href="global.html#filterListings">filterListings</a></li><li><a href="global.html#loadData">loadData</a></li><li><a href="global.html#main">main</a></li><li><a href="global.html#parseNumber">parseNumber</a></li><li><a href="global.html#parsePrice">parsePrice</a></li><li><a href="global.html#question">question</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Mon Feb 24 2025 23:34:13 GMT-0800 (Pacific Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

@@ -1,9 +1,13 @@
-// AirBnBDataHandler.js
+/**
+ * @module AirBnBDataHandler
+ */
+
 import fs from 'fs/promises';
 import csv from 'csv-parser';
 
 /**
  * Loads CSV data from the specified file path.
+ * @memberof module:AirBnBDataHandler
  * @param {string} filePath - The path to the CSV file.
  * @returns {Promise<Array<Object>>} - A promise that resolves to an array of listing objects.
  */
@@ -21,6 +25,7 @@ const loadData = async (filePath) => {
 
 /**
  * Filters the listings based on the provided criteria.
+ * @memberof module:AirBnBDataHandler
  * @param {Array<Object>} listings - The array of listing objects.
  * @param {Object} criteria - The filter criteria.
  * @param {number} [criteria.minPrice] - The minimum price.

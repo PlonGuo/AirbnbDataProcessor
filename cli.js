@@ -1,4 +1,7 @@
-// cli.js
+/**
+ * @module CLI
+ */
+
 import readline from 'readline';
 import {
   loadData,
@@ -15,6 +18,7 @@ const rl = readline.createInterface({
 
 /**
  * Promisified version of readline.question for easier async/await usage.
+ * @memberof module:CLI
  * @param {string} query - The question to prompt the user.
  * @returns {Promise<string>} - A promise that resolves to the user's input.
  */

@@ -29,8 +29,6 @@ In functional programming, **pure functions** and **higher-order functions** are
 
 ## Pure Function Counter Example
 
-### Example of Breaking Pure Function Principle:
-
 ```js
 // External mutable state
 let total = 0;

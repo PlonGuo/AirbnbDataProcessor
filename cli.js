@@ -25,14 +25,20 @@ const question = (query) => new Promise((resolve) => rl.question(query, resolve)
  */
 const main = async () => {
   try {
-    const filePath = await question('Please enter the name of the CSV file: ~> ');
+    console.log('\n============================');
+    console.log('    Airbnb Data Processor    ');
+    console.log('============================\n');
 
-    console.log('Loading data...');
+    const filePath = await question('Please enter the file name (CSV/ZIP/GZ): ~> ');
+
+    console.log('\nLoading data...');
     const handler = AirBnBDataHandler(filePath);
 
     await handler.loadData();
-    // Method Chaining 
-      handler
+    console.log(`\nLoaded ${handler.getData().length} listings.\n`);
+
+    console.log('Applying filters...');
+    handler
       .filterListings({
         minPrice: parseFloat(await question('Enter minimum price (or press Enter to skip): ~> ')) || undefined,
         maxPrice: parseFloat(await question('Enter maximum price (or press Enter to skip): ~> ')) || undefined,
@@ -44,43 +50,64 @@ const main = async () => {
       .computeStatistics()
       .computeHostRanking();
 
-    console.log(`Loaded ${handler.getData().length} listings.`);
-    console.log(`Filtered ${handler.getFilteredData().length} listings based on your criteria.`);
+    console.log('\n============================');
+    console.log('     Filtered Listings       ');
+    console.log('============================');
+    console.log(`\nFiltered ${handler.getFilteredData().length} listings based on your criteria.\n`);
 
     console.log('*********');
     console.log('Filtered Listings (ID and Price):');
-    handler.getFilteredData().forEach(listing => {
-      console.log(`ID: ${listing.id}, Price: $${listing.price}`);
+    handler.getFilteredData().slice(0, 10).forEach(listing => {
+      console.log(`  - ID: ${listing.id}, Price: $${listing.price}`);
     });
+    if (handler.getFilteredData().length > 10) {
+      console.log(`  ...and ${handler.getFilteredData().length - 10} more listings.`);
+    }
+    console.log('*********\n');
 
-    console.log('*********');
     console.log('Computing statistics...');
     const stats = handler.getStatistics();
+    console.log('\n============================');
+    console.log('        Statistics           ');
+    console.log('============================');
     console.log(`Total Listings: ${stats.totalListings}`);
-    console.log(`Average Price per Room: $${stats.averagePricePerRoom}`);
+    console.log(`Average Price per Room: $${stats.averagePricePerRoom}\n`);
 
-    console.log('*********');
-    console.log('Computing host ranking...');
+    console.log('============================');
+    console.log('       Host Ranking          ');
+    console.log('============================');
     const hostRanking = handler.getHostRanking();
-
     if (hostRanking.length > 0) {
-      hostRanking.forEach(host => {
-        console.log(`Host: ${host.hostName} | Listings: ${host.listingsCount}`);
+      hostRanking.slice(0, 5).forEach((host, index) => {
+        console.log(`  ${index + 1}. Host: ${host.hostName} | Listings: ${host.listingsCount}`);
       });
+      if (hostRanking.length > 5) {
+        console.log(`  ...and ${hostRanking.length - 5} more hosts.`);
+      }
     } else {
       console.log('No host data available for ranking.');
     }
 
+    console.log('\n============================');
+    console.log('         Export Data         ');
+    console.log('============================');
     const exportChoice = await question('Would you like to export the results? (yes/no) ~> ');
     if (exportChoice.toLowerCase() === 'yes') {
       const exportFilePath = await question('Enter the output file name (e.g., results.json): ~> ');
       await handler.exportResults(exportFilePath);
-      console.log(`Results exported to ${exportFilePath}`);
+      console.log(`\nResults successfully exported to ${exportFilePath}`);
+    } else {
+      console.log('Results not exported.');
     }
+
+    console.log('\n============================');
+    console.log('       Process Complete      ');
+    console.log('============================\n');
 
     rl.close();
   } catch (error) {
-    console.error('An error occurred:', error);
+    console.error('\nAn error occurred:', error.message);
+    console.log('Please check your file and try again.');
     rl.close();
   }
 };

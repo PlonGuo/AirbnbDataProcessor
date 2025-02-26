@@ -43,7 +43,6 @@ const main = async () => {
       })
       .computeStatistics()
       .computeHostRanking();
-    // === Method Chaining Ends Here ===
 
     console.log(`Loaded ${handler.getData().length} listings.`);
     console.log(`Filtered ${handler.getFilteredData().length} listings based on your criteria.`);

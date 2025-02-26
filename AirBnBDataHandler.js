@@ -19,23 +19,28 @@ class AirBnBDataHandler {
   }
 
   /**
-   * Loads CSV data from the specified file path.
-   * @returns {Promise<AirBnBDataHandler>} - The instance for chaining.
-   */
-  async loadData() {
-    const data = [];
-    const fileStream = await fs.open(this.filePath, 'r');
-    return new Promise((resolve, reject) => {
-      fileStream.createReadStream()
-        .pipe(csv())
-        .on('data', (row) => data.push(row))
-        .on('end', () => {
-          this.data = data;
-          resolve(this);
-        })
-        .on('error', (error) => reject(error));
-    });
-  }
+ * Loads CSV data from the specified file path.
+ * Supports method chaining by returning the instance itself.
+ * @returns {Promise<AirBnBDataHandler>} - The instance for chaining.
+ */
+async loadData() {
+  const data = [];
+  const fileStream = await fs.open(this.filePath, 'r');
+
+  // Return the resolved instance to support chaining
+  await new Promise((resolve, reject) => {
+    fileStream.createReadStream()
+      .pipe(csv())
+      .on('data', (row) => data.push(row))
+      .on('end', () => {
+        this.data = data;
+        resolve();
+      })
+      .on('error', (error) => reject(error));
+  });
+
+  return this;  // Return `this` to support method chaining
+}
 
   /**
    * Filters the listings based on the provided criteria.

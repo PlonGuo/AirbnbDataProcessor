@@ -31,25 +31,21 @@ const main = async () => {
     const handler = AirBnBDataHandler(filePath);
 
     await handler.loadData();
+    // Method Chaining 
+      handler
+      .filterListings({
+        minPrice: parseFloat(await question('Enter minimum price (or press Enter to skip): ~> ')) || undefined,
+        maxPrice: parseFloat(await question('Enter maximum price (or press Enter to skip): ~> ')) || undefined,
+        minRooms: parseInt(await question('Enter minimum number of rooms (or press Enter to skip): ~> '), 10) || undefined,
+        maxRooms: parseInt(await question('Enter maximum number of rooms (or press Enter to skip): ~> '), 10) || undefined,
+        minReviewScore: parseFloat(await question('Enter minimum review score (or press Enter to skip): ~> ')) || undefined,
+        maxReviewScore: parseFloat(await question('Enter maximum review score (or press Enter to skip): ~> ')) || undefined
+      })
+      .computeStatistics()
+      .computeHostRanking();
+    // === Method Chaining Ends Here ===
+
     console.log(`Loaded ${handler.getData().length} listings.`);
-
-    const minPrice = parseFloat(await question('Enter minimum price (or press Enter to skip): ~> ')) || undefined;
-    const maxPrice = parseFloat(await question('Enter maximum price (or press Enter to skip): ~> ')) || undefined;
-    const minRooms = parseInt(await question('Enter minimum number of rooms (or press Enter to skip): ~> '), 10) || undefined;
-    const maxRooms = parseInt(await question('Enter maximum number of rooms (or press Enter to skip): ~> '), 10) || undefined;
-    const minReviewScore = parseFloat(await question('Enter minimum review score (or press Enter to skip): ~> ')) || undefined;
-    const maxReviewScore = parseFloat(await question('Enter maximum review score (or press Enter to skip): ~> ')) || undefined;
-
-    console.log('Filtering listings...');
-    handler.filterListings({ 
-      minPrice, 
-      maxPrice, 
-      minRooms, 
-      maxRooms, 
-      minReviewScore, 
-      maxReviewScore 
-    });
-
     console.log(`Filtered ${handler.getFilteredData().length} listings based on your criteria.`);
 
     console.log('*********');
@@ -60,13 +56,13 @@ const main = async () => {
 
     console.log('*********');
     console.log('Computing statistics...');
-    const stats = handler.computeStatistics().getStatistics();
+    const stats = handler.getStatistics();
     console.log(`Total Listings: ${stats.totalListings}`);
     console.log(`Average Price per Room: $${stats.averagePricePerRoom}`);
 
     console.log('*********');
     console.log('Computing host ranking...');
-    const hostRanking = handler.computeHostRanking().getHostRanking();
+    const hostRanking = handler.getHostRanking();
 
     if (hostRanking.length > 0) {
       hostRanking.forEach(host => {

@@ -3,13 +3,7 @@
  */
 
 import readline from 'readline';
-import {
-  loadData,
-  filterListings,
-  computeStatistics,
-  computeHostRanking,
-  exportResults,
-} from './AirBnBDataHandler.js';
+import AirBnBDataHandler from './AirBnBDataHandler.js';
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -26,14 +20,18 @@ const question = (query) => new Promise((resolve) => rl.question(query, resolve)
 
 /**
  * Main function to run the CLI application.
+ * Utilizes Method Chaining for better readability and flow.
+ * @memberof module:CLI
  */
 const main = async () => {
   try {
     const filePath = await question('Please enter the name of the CSV file: ~> ');
 
     console.log('Loading data...');
-    const listings = await loadData(filePath);
-    console.log(`Loaded ${listings.length} listings.`);
+    const handler = AirBnBDataHandler(filePath);
+
+    await handler.loadData();
+    console.log(`Loaded ${handler.getData().length} listings.`);
 
     const minPrice = parseFloat(await question('Enter minimum price (or press Enter to skip): ~> ')) || undefined;
     const maxPrice = parseFloat(await question('Enter maximum price (or press Enter to skip): ~> ')) || undefined;
@@ -43,33 +41,45 @@ const main = async () => {
     const maxReviewScore = parseFloat(await question('Enter maximum review score (or press Enter to skip): ~> ')) || undefined;
 
     console.log('Filtering listings...');
-    const filteredListings = filterListings(listings, {
-      minPrice,
-      maxPrice,
-      minRooms,
-      maxRooms,
-      minReviewScore,
-      maxReviewScore,
+    handler.filterListings({ 
+      minPrice, 
+      maxPrice, 
+      minRooms, 
+      maxRooms, 
+      minReviewScore, 
+      maxReviewScore 
     });
 
-    console.log(`Filtered ${filteredListings.length} listings based on your criteria.`);
+    console.log(`Filtered ${handler.getFilteredData().length} listings based on your criteria.`);
 
+    console.log('*********');
+    console.log('Filtered Listings (ID and Price):');
+    handler.getFilteredData().forEach(listing => {
+      console.log(`ID: ${listing.id}, Price: $${listing.price}`);
+    });
+
+    console.log('*********');
     console.log('Computing statistics...');
-    const stats = computeStatistics(filteredListings);
-    console.log('Statistics:', stats);
+    const stats = handler.computeStatistics().getStatistics();
+    console.log(`Total Listings: ${stats.totalListings}`);
+    console.log(`Average Price per Room: $${stats.averagePricePerRoom}`);
 
+    console.log('*********');
     console.log('Computing host ranking...');
-    const hostRanking = computeHostRanking(filteredListings);
-    console.log('Host Ranking:', hostRanking);
+    const hostRanking = handler.computeHostRanking().getHostRanking();
+
+    if (hostRanking.length > 0) {
+      hostRanking.forEach(host => {
+        console.log(`Host: ${host.hostName} | Listings: ${host.listingsCount}`);
+      });
+    } else {
+      console.log('No host data available for ranking.');
+    }
 
     const exportChoice = await question('Would you like to export the results? (yes/no) ~> ');
     if (exportChoice.toLowerCase() === 'yes') {
-      const exportFilePath = await question('Enter the output file path (e.g., results.json): ~> ');
-      await exportResults(exportFilePath, {
-        filteredListings,
-        stats,
-        hostRanking,
-      });
+      const exportFilePath = await question('Enter the output file name (e.g., results.json): ~> ');
+      await handler.exportResults(exportFilePath);
       console.log(`Results exported to ${exportFilePath}`);
     }
 

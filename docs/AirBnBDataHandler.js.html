@@ -32,112 +32,150 @@
 
 import fs from 'fs/promises';
 import csv from 'csv-parser';
+import { parsePrice, parseNumber } from './utils.js';
 
 /**
- * Loads CSV data from the specified file path.
- * @memberof module:AirBnBDataHandler
- * @param {string} filePath - The path to the CSV file.
- * @returns {Promise&lt;Array&lt;Object>>} - A promise that resolves to an array of listing objects.
+ * AirBnBDataHandler class to handle data loading, filtering, statistics, and ranking.
  */
-const loadData = async (filePath) => {
-  const data = [];
-  const fileStream = await fs.open(filePath, 'r');
-  return new Promise((resolve, reject) => {
-    fileStream.createReadStream()
-      .pipe(csv())
-      .on('data', (row) => data.push(row))
-      .on('end', () => resolve(data))
-      .on('error', (error) => reject(error));
-  });
-};
+class AirBnBDataHandler {
+  constructor(filePath) {
+    this.filePath = filePath;
+    this.data = [];
+    this.filteredData = [];
+    this.statistics = {};
+    this.hostRanking = [];
+  }
 
-/**
- * Filters the listings based on the provided criteria.
- * @memberof module:AirBnBDataHandler
- * @param {Array&lt;Object>} listings - The array of listing objects.
- * @param {Object} criteria - The filter criteria.
- * @param {number} [criteria.minPrice] - The minimum price.
- * @param {number} [criteria.maxPrice] - The maximum price.
- * @param {number} [criteria.minRooms] - The minimum number of rooms.
- * @param {number} [criteria.maxRooms] - The maximum number of rooms.
- * @param {number} [criteria.minReviewScore] - The minimum review score.
- * @param {number} [criteria.maxReviewScore] - The maximum review score.
- * @returns {Array&lt;Object>} - The filtered array of listing objects.
- */
-const filterListings = (listings, criteria) => {
-  return listings.filter((listing) => {
-    const price = parseFloat(listing.price.replace(/[^0-9.-]+/g, ''));
-    const rooms = parseInt(listing.bedrooms, 10);
-    const reviewScore = parseFloat(listing.review_scores_rating);
+  /**
+   * Loads CSV data from the specified file path.
+   * @returns {Promise&lt;AirBnBDataHandler>} - The instance for chaining.
+   */
+  async loadData() {
+    const data = [];
+    const fileStream = await fs.open(this.filePath, 'r');
+    return new Promise((resolve, reject) => {
+      fileStream.createReadStream()
+        .pipe(csv())
+        .on('data', (row) => data.push(row))
+        .on('end', () => {
+          this.data = data;
+          resolve(this);
+        })
+        .on('error', (error) => reject(error));
+    });
+  }
 
-    return (!criteria.minPrice || price >= criteria.minPrice) &amp;&amp;
-           (!criteria.maxPrice || price &lt;= criteria.maxPrice) &amp;&amp;
-           (!criteria.minRooms || rooms >= criteria.minRooms) &amp;&amp;
-           (!criteria.maxRooms || rooms &lt;= criteria.maxRooms) &amp;&amp;
-           (!criteria.minReviewScore || reviewScore >= criteria.minReviewScore) &amp;&amp;
-           (!criteria.maxReviewScore || reviewScore &lt;= criteria.maxReviewScore);
-  });
-};
+  /**
+   * Filters the listings based on the provided criteria.
+   * @param {Object} criteria - The filter criteria.
+   * @returns {AirBnBDataHandler} - The instance for chaining.
+   */
+  filterListings(criteria) {
+    this.filteredData = this.data.filter((listing) => {
+      const price = parsePrice(listing.price);
+      const rooms = parseNumber(listing.bedrooms, 1);
+      const reviewScore = parseNumber(listing.review_scores_rating);
 
-/**
- * Computes statistics on the filtered listings.
- * @param {Array&lt;Object>} listings - The array of filtered listing objects.
- * @returns {Object} - An object containing the count of listings and average price per number of rooms.
- */
-const computeStatistics = (listings) => {
-  const totalListings = listings.length;
-  const pricePerRoom = listings.reduce((acc, listing) => {
-    const price = parseFloat(listing.price.replace(/[^0-9.-]+/g, ''));
-    const rooms = parseInt(listing.bedrooms, 10) || 1; // Default to 1 if bedrooms is not a number
-    return acc + price / rooms;
-  }, 0) / totalListings;
+      return (!criteria.minPrice || price >= criteria.minPrice) &amp;&amp;
+             (!criteria.maxPrice || price &lt;= criteria.maxPrice) &amp;&amp;
+             (!criteria.minRooms || rooms >= criteria.minRooms) &amp;&amp;
+             (!criteria.maxRooms || rooms &lt;= criteria.maxRooms) &amp;&amp;
+             (!criteria.minReviewScore || reviewScore >= criteria.minReviewScore) &amp;&amp;
+             (!criteria.maxReviewScore || reviewScore &lt;= criteria.maxReviewScore);
+    });
+    return this;
+  }
 
-  return {
-    totalListings,
-    averagePricePerRoom: pricePerRoom.toFixed(2),
-  };
-};
+  /**
+   * Computes statistics on the filtered listings.
+   * @returns {AirBnBDataHandler} - The instance for chaining.
+   */
+  computeStatistics() {
+    const totalListings = this.filteredData.length;
+    const pricePerRoom = this.filteredData.reduce((acc, listing) => {
+      const price = parsePrice(listing.price);
+      const rooms = parseNumber(listing.bedrooms, 1);
+      return acc + price / rooms;
+    }, 0) / totalListings;
 
-/**
- * Computes the number of listings per host and provides a ranking.
- * @param {Array&lt;Object>} listings - The array of listing objects.
- * @returns {Array&lt;Object>} - An array of hosts sorted by the number of listings in descending order.
- */
-const computeHostRanking = (listings) => {
-  const hostMap = listings.reduce((acc, listing) => {
-    const hostId = listing.host_id;
-    if (!acc[hostId]) {
-      acc[hostId] = {
-        hostId,
-        hostName: listing.host_name,
-        listingsCount: 0,
-      };
-    }
-    acc[hostId].listingsCount += 1;
-    return acc;
-  }, {});
+    this.statistics = {
+      totalListings,
+      averagePricePerRoom: pricePerRoom.toFixed(2),
+    };
+    return this;
+  }
 
-  return Object.values(hostMap).sort((a, b) => b.listingsCount - a.listingsCount);
-};
+  /**
+   * Computes the number of listings per host and provides a ranking.
+   * @returns {AirBnBDataHandler} - The instance for chaining.
+   */
+  computeHostRanking() {
+    const hostMap = this.filteredData.reduce((acc, listing) => {
+      const hostId = listing.host_id;
+      if (!acc[hostId]) {
+        acc[hostId] = {
+          hostId,
+          hostName: listing.host_name,
+          listingsCount: 0,
+        };
+      }
+      acc[hostId].listingsCount += 1;
+      return acc;
+    }, {});
 
-/**
- * Exports the results to a specified file.
- * @param {string} filePath - The path to the output file.
- * @param {Object} data - The data to be written to the file.
- * @returns {Promise&lt;void>} - A promise that resolves when the file has been written.
- */
-const exportResults = async (filePath, data) => {
-  const jsonData = JSON.stringify(data, null, 2);
-  await fs.writeFile(filePath, jsonData, 'utf8');
-};
+    this.hostRanking = Object.values(hostMap).sort((a, b) => b.listingsCount - a.listingsCount);
+    return this;
+  }
 
-export {
-  loadData,
-  filterListings,
-  computeStatistics,
-  computeHostRanking,
-  exportResults,
-};</code></pre>
+  /**
+   * Exports the results to a specified file.
+   * @param {string} filePath - The path to the output file.
+   * @returns {Promise&lt;AirBnBDataHandler>} - The instance for chaining.
+   */
+  async exportResults(filePath) {
+    const jsonData = JSON.stringify({
+      filteredListings: this.getFilteredData(),
+      statistics: this.getStatistics(),
+      hostRanking: this.getHostRanking(),
+    }, null, 2);
+    await fs.writeFile(filePath, jsonData, 'utf8');
+    return this;
+  }
+
+  /**
+   * Gets the loaded data.
+   * @returns {Array&lt;Object>} - The loaded data.
+   */
+  getData() {
+    return this.data;
+  }
+
+  /**
+   * Gets the filtered data.
+   * @returns {Array&lt;Object>} - The filtered data.
+   */
+  getFilteredData() {
+    return this.filteredData;
+  }
+
+  /**
+   * Gets the computed statistics.
+   * @returns {Object} - The computed statistics.
+   */
+  getStatistics() {
+    return this.statistics;
+  }
+
+  /**
+   * Gets the computed host ranking.
+   * @returns {Array&lt;Object>} - The computed host ranking.
+   */
+  getHostRanking() {
+    return this.hostRanking;
+  }
+}
+
+export default (filePath) => new AirBnBDataHandler(filePath);</code></pre>
         </article>
     </section>
 
@@ -147,13 +185,13 @@ export {
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-AirBnBDataHandler.html">AirBnBDataHandler</a></li><li><a href="module-CLI.html">CLI</a></li><li><a href="module-Utils.html">Utils</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-AirBnBDataHandler.html">AirBnBDataHandler</a></li><li><a href="module-CLI.html">CLI</a></li><li><a href="module-Utils.html">Utils</a></li></ul><h3>Classes</h3><ul><li><a href="module-AirBnBDataHandler-AirBnBDataHandler.html">AirBnBDataHandler</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Mon Feb 24 2025 23:45:55 GMT-0800 (Pacific Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Tue Feb 25 2025 21:15:56 GMT-0800 (Pacific Standard Time)
 </footer>
 
 <script> prettyPrint(); </script>

@@ -52,6 +52,12 @@ In functional programming, **pure functions** and **higher-order functions** are
 
 ---
 
+## 3. Youtube Video Link
+
+[https://https://www.youtube.com/watch?v=JfgFJUrEVeA](https://www.youtube.com/watch?v=JfgFJUrEVeA)
+
+---
+
 ## Pure Function Counter Example
 
 ```js

@@ -6,6 +6,22 @@ The Airbnb Data Processor is designed to process Airbnb data from a CSV file. It
 
 ---
 
+## How to run the program (Make sure you have Node.js and npm installed)
+
+1. **Install all the dependencies first**
+
+```zsh
+npm install
+```
+
+2. **Run the program**
+
+```zsh
+node cli.js
+```
+
+---
+
 ## Tools and Technologies Used
 
 - **JavaScript (ES6+)**: For functional programming with array methods like `map`, `filter`, and `reduce`.
@@ -24,18 +40,20 @@ This project uses method chaining extensively for better readability and flow. F
 
 ## GenAI Usage
 
-I utilized GenAI to assist with writing the CLI section of the project. Specifically:
-
 - **Prompt1**:
-  "Write a CLI that meets the requirements:
-  - Compute Statistics on how many listings fall into the filter, and what's their average price per number of rooms
-  - Filter listings based on price, number of rooms or review_score
-  - Compute how many listings are there per host, and provide a ranking by number of listings
-  - Export the results the calculations to a file of the user choice "
+  - "How do I read a CSV file in JS?""
 - **Prompt2**:
+  - "How do I read a GZ file in JS?"
+- **Prompt3**:
+  - "How do I read a ZIP file in JS?"
+- **Prompt4**:
+  - "Please give me an example of using reduce() in JS to calculate the average of an array of numbers."
+- **Prompt5**:
   "Could you tell me how to parses a price string and converts it to a float?"
-- **Debugging Process**: The initial version required several iterations. I learned to provide more detailed prompts, specifying the desired outputs and the data flow. This improved the accuracy of the generated code.
-- **What I Learned**: Using GenAI helped me understand the importance of clear and precise prompts. It also demonstrated the efficiency of breaking down complex tasks into smaller, manageable parts. Additionally, I learned to critically evaluate the generated code, enhancing my debugging and problem-solving skills.
+
+**Debugging Process**: The initial version required several iterations. I learned to provide more detailed prompts, specifying the desired outputs and the data flow. This improved the accuracy of the generated code.
+
+**What I Learned**: Using GenAI helped me understand the importance of clear and precise prompts. It also demonstrated the efficiency of breaking down complex tasks into smaller, manageable parts. Additionally, I learned to critically evaluate the generated code, enhancing my debugging and problem-solving skills.
 
 ---
 

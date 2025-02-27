@@ -8,7 +8,7 @@ The Airbnb Data Processor is designed to process Airbnb data from a CSV file. It
 
 ## How to run the program (Make sure you have Node.js and npm installed)
 
-1. **Install all the dependencies first**
+1. **Install all the dependencies first by typing following command**
 
 ```zsh
 npm install
@@ -95,4 +95,20 @@ const addToTotal = (numbers) => {
 
 addToTotal([1, 2, 3]);
 console.log(total); // Output: 6
+```
+
+## Higher-Order Function Counter Example
+
+```js
+const createBrokenCounter = (initialValue = 0) => {
+  let count = initialValue;
+
+  // Broken because it doesn't return a function
+  count++;
+  return count;
+};
+
+const counter = createBrokenCounter();
+console.log(counter); // 1
+console.log(counter); // 1 (It doesn't actually count)
 ```
